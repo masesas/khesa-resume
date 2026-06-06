@@ -25,4 +25,6 @@ pnpm-debug.log*
 .claude/
 .remember/
 *.docx
-scripts/
+
+# local image-processing tooling at repo root only — must NOT match src/scripts/
+/scripts/
