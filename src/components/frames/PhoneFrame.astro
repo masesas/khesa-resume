@@ -1,0 +1,60 @@
+---
+// PhoneFrame: wraps a mobile screenshot in a flat, neutral phone bezel (no OS-specific notch).
+// Pure component — props in, markup out. Screenshot is passed via the default slot.
+interface Props {
+  theme?: 'light' | 'dark';
+}
+const { theme = 'dark' } = Astro.props;
+---
+
+<div class={`phone phone--${theme}`}>
+  <div class="phone__bezel">
+    <span class="phone__speaker" aria-hidden="true"></span>
+    <div class="phone__screen">
+      <slot />
+    </div>
+  </div>
+</div>
+
+<style>
+  .phone {
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  .phone__bezel {
+    position: relative;
+    background: #1c1c1e;
+    border-radius: 36px;
+    padding: 10px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .phone--light .phone__bezel {
+    background: #2c2c2e;
+  }
+
+  .phone__speaker {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 5px;
+    border-radius: 3px;
+    background: #3a3a3c;
+    z-index: 2;
+  }
+
+  .phone__screen {
+    border-radius: 27px;
+    overflow: hidden;
+    background: #000;
+    line-height: 0;
+  }
+  .phone__screen :global(img) {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+</style>

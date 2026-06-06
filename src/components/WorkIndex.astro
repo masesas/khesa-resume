@@ -1,0 +1,910 @@
+---
+// Interactive work index (Concept A): a scannable list on the left, a sticky
+// preview pane on the right that swaps the hero shot as you hover each row.
+// Featured projects get a larger row. On touch / narrow screens the preview
+// pane is hidden and each row shows an inline thumbnail instead.
+import BrowserFrame from "./frames/BrowserFrame.astro";
+import PhoneFrame from "./frames/PhoneFrame.astro";
+import type { Project } from "../data/projects";
+
+interface Props {
+	projects: Project[];
+}
+const { projects } = Astro.props;
+
+// Order featured first so the index reads strongest-first.
+const ordered = [...projects].sort(
+	(a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)),
+);
+
+// Map a tech token (from project.tech, " · "-separated) to a public/tech/*.svg
+// icon name. `mono` icons are dark-on-transparent and need a fill in CSS.
+type IconDef = { name: string; mono?: boolean };
+const TECH_ICON: Record<string, IconDef> = {
+	vue: { name: "vuejs" },
+	node: { name: "nodejs" },
+	"node.js": { name: "nodejs" },
+	express: { name: "express", mono: true },
+	postgresql: { name: "postgresql" },
+  mysql: { name: "mysql" },
+	react: { name: "react" },
+	java: { name: "java" },
+	springboot: { name: "spring" },
+	"spring boot": { name: "spring" },
+	jpa: { name: "spring" },
+	android: { name: "android" },
+	kotlin: { name: "kotlin" },
+	laravel: { name: "laravel" },
+	flutter: { name: "flutter" },
+	ios: { name: "apple", mono: true },
+	firebase: { name: "firebase" },
+	"c#": { name: "csharp" },
+	".net": { name: "dotnetcore" },
+	"sql server": { name: "microsoftsqlserver" },
+	swift: { name: "swift" },
+  javascript: { name: "javascript" },
+  php: { name: "php" },
+  gmaps: { name: "gmaps" },
+  bluetooth: { name: "bluetooth" },
+  redis: { name: "redis" },
+};
+// Generic tokens we never iconize — silently skipped.
+const TECH_SKIP = new Set([
+	"web",
+	"mobile",
+	"mobile game",
+	"financing platform",
+	"music aggregator",
+	"workshop management",
+	"sprint & project tracking",
+	"syllable learning for kids",
+	"asset appraisal",
+	"google maps api",
+]);
+
+type TechIcon = { name: string; label: string; mono: boolean };
+function techIcons(tech?: string): TechIcon[] {
+	if (!tech) return [];
+	const out: TechIcon[] = [];
+	const seen = new Set<string>();
+	for (const raw of tech.split("·")) {
+		const label = raw.trim();
+		const key = label.toLowerCase();
+		if (TECH_SKIP.has(key)) continue;
+		const def = TECH_ICON[key];
+		if (!def || seen.has(def.name)) continue;
+		seen.add(def.name);
+		out.push({ name: def.name, label, mono: Boolean(def.mono) });
+	}
+	return out;
+}
+
+const hero = (p: Project) => p.shots[0];
+---
+
+<div class="wi">
+	<ol class="wi__list">
+		{
+			ordered.map((p, i) => {
+				const h = hero(p);
+				const Tag = p.url ? "a" : "div";
+				const href = p.url ? `https://${p.url}` : undefined;
+				return (
+					<li
+						class={`wi__row${p.featured ? " wi__row--featured" : ""}`}
+						data-reveal
+					>
+						<Tag
+							class="wi__link"
+							data-slug={p.slug}
+							data-active={i === 0 ? "true" : "false"}
+						>
+							<span class="wi__main">
+								<span class="wi__title">{p.title}</span>
+								{/* {p.impact && (
+									<span class="wi__impact">
+										{p.impact}
+									</span>
+								)} */}
+							</span>
+
+							{/* Inline thumb — only shows on touch / narrow screens. */}
+							<span class="wi__thumb" aria-hidden="true">
+								<img
+									src={h.src}
+									alt=""
+									loading="lazy"
+								/>
+							</span>
+
+							<span class="wi__meta">
+								{p.platforms && (
+									<span class="wi__platforms">
+										{p.platforms.map((pl) => (
+											<span class="wi__badge">
+												{pl}
+											</span>
+										))}
+									</span>
+								)}
+								{/* {p.year && <span class="wi__year">{p.year}</span>} */}
+							</span>
+						</Tag>
+					</li>
+				);
+			})
+		}
+	</ol>
+
+	<div class="wi__preview" aria-hidden="true">
+		<div class="wi__preview-inner">
+			{
+				ordered.map((p, i) => {
+					const icons = techIcons(p.tech);
+					return (
+						<figure
+							class="wi__figure"
+							data-preview={p.slug}
+							data-active={i === 0 ? "true" : "false"}
+						>
+							<div class="wi__wrapper">
+								<span class="wi__caption-role">
+									{p.title}
+								</span>
+								<div class="wi__wrapper-sub">
+									{(p.storeListing || p.url) && (
+										<div class="wi__wrapper-col">
+											<span class="wi__lable-thin">
+												Available on
+											</span>
+											<div class="wi__wrapper-info">
+												{p.url && (
+													<a
+														href={
+															p.url
+														}
+														target="_blank"
+														rel="noopener"
+													>
+														🌐
+													</a>
+												)}
+												{p.storeListing
+													?.android && (
+													<a
+														href={
+															p
+																.storeListing
+																.android
+														}
+														target="_blank"
+														rel="noopener"
+													>
+														<img
+															class={`wi__caption-icon}`}
+															src={`/tech/playstore.png`}
+															alt={
+																"Google Play Store"
+															}
+															title={
+																"Google Play Store"
+															}
+															width="20"
+															height="20"
+															loading="lazy"
+														/>
+													</a>
+												)}
+												{p.storeListing
+													?.ios && (
+													<a
+														href={
+															p
+																.storeListing
+																.ios
+														}
+														target="_blank"
+														rel="noopener"
+													>
+														<img
+															class={`wi__caption-icon}`}
+															src={`/tech/appstore.png`}
+															alt={
+																"App Store"
+															}
+															title={
+																"App Store"
+															}
+															width="20"
+															height="20"
+															loading="lazy"
+														/>
+													</a>
+												)}
+											</div>
+										</div>
+									)}
+									{(p.storeListing || p.url) && (
+										<span class="wi__seperator" />
+									)}
+									<div class="wi__wrapper-col">
+										<span class="wi__lable-thin">
+											Tech
+										</span>
+										<figcaption class="wi__caption">
+											{icons.length > 0 && (
+												<span class="wi__caption-icons">
+													{icons.map(
+														(t) => (
+															<img
+																class={`wi__caption-icon${t.mono ? " wi__caption-icon--mono" : ""}`}
+																src={`/tech/${t.name}.svg`}
+																alt={
+																	t.label
+																}
+																title={
+																	t.label
+																}
+																width="20"
+																height="20"
+																loading="lazy"
+															/>
+														),
+													)}
+												</span>
+											)}
+										</figcaption>
+									</div>
+								</div>
+							</div>
+							<div
+								class="wi__carousel"
+								data-carousel
+								data-index="0"
+							>
+								<div class="wi__viewport">
+									<div class="wi__track">
+										{p.shots.map((shot, si) => (
+											<div
+												class="wi__slide"
+												data-slide={si}
+											>
+												{shot.type ===
+												"web" ? (
+													<BrowserFrame>
+														<img
+															src={
+																shot.src
+															}
+															alt={
+																shot.alt
+															}
+															loading="lazy"
+														/>
+													</BrowserFrame>
+												) : (
+													<PhoneFrame>
+														<img
+															src={
+																shot.src
+															}
+															alt={
+																shot.alt
+															}
+															loading="lazy"
+														/>
+													</PhoneFrame>
+												)}
+											</div>
+										))}
+									</div>
+								</div>
+
+								{p.shots.length > 1 && (
+									<div class="wi__controls">
+										<button
+											class="wi__arrow"
+											data-prev
+											type="button"
+											aria-label="Previous image"
+										>
+											←
+										</button>
+										<div class="wi__dots">
+											{p.shots.map((_, di) => (
+												<button
+													class="wi__dot"
+													data-dot={di}
+													data-active={
+														di === 0
+															? "true"
+															: "false"
+													}
+													type="button"
+													aria-label={`Go to image ${di + 1}`}
+												/>
+											))}
+										</div>
+										<button
+											class="wi__arrow"
+											data-next
+											type="button"
+											aria-label="Next image"
+										>
+											→
+										</button>
+									</div>
+								)}
+							</div>
+						</figure>
+					);
+				})
+			}
+		</div>
+	</div>
+</div>
+
+<style>
+	.wi {
+		display: grid;
+		grid-template-columns: 1.05fr 0.95fr;
+		gap: clamp(32px, 5vw, 72px);
+		align-items: center;
+	}
+
+	/* ---------- List ---------- */
+	.wi__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.wi__row {
+		border-top: 1px solid var(--line-soft);
+	}
+	.wi__row:last-child {
+		border-bottom: 1px solid var(--line-soft);
+	}
+	.wi__link {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		align-items: center;
+		gap: 18px;
+		padding: 20px 6px;
+		text-decoration: none;
+		color: inherit;
+		transition:
+			padding-left 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 0.3s ease;
+	}
+	.wi__row--featured .wi__link {
+		padding-top: 28px;
+		padding-bottom: 28px;
+	}
+
+	/* Dim the other rows when the list is hovered, spotlighting the active one. */
+	.wi__list:hover .wi__link {
+		opacity: 0.45;
+	}
+	.wi__list:hover .wi__link:hover,
+	.wi__link[data-active="true"] {
+		opacity: 1;
+	}
+	.wi__link:hover {
+		padding-left: 16px;
+	}
+
+	.wi__num {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		color: var(--accent);
+		align-self: start;
+		padding-top: 4px;
+	}
+
+	.wi__main {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+	}
+	.wi__title {
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: clamp(18px, 2.4vw, 24px);
+		letter-spacing: -0.01em;
+		line-height: 1.15;
+		display: inline-flex;
+		align-items: baseline;
+		gap: 8px;
+	}
+	.wi__row--featured .wi__title {
+		font-size: clamp(22px, 3.2vw, 34px);
+		font-weight: 300;
+	}
+	.wi__ext {
+		font-size: 0.6em;
+		color: var(--muted);
+		transition:
+			color 0.2s ease,
+			transform 0.2s ease;
+	}
+	.wi__link:hover .wi__ext {
+		color: var(--accent);
+		transform: translate(2px, -2px);
+	}
+	.wi__impact {
+		font-family: var(--font-mono);
+		font-size: 12.5px;
+		color: var(--muted);
+		line-height: 1.4;
+	}
+
+	.wi__meta {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 8px;
+		text-align: right;
+	}
+	.wi__platforms {
+		display: flex;
+		gap: 6px;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
+	.wi__badge {
+		font-family: var(--font-mono);
+		font-size: 10.5px;
+		letter-spacing: 0.03em;
+		color: var(--muted);
+		border: 1px solid var(--line-soft);
+		border-radius: 5px;
+		padding: 2px 7px;
+		white-space: nowrap;
+	}
+	.wi__link[data-active="true"] .wi__badge {
+		border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+		color: var(--accent);
+	}
+	.wi__year {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		color: var(--muted);
+	}
+
+	/* Inline thumb: desktop hidden (preview pane used instead). */
+	.wi__thumb {
+		display: none;
+	}
+
+	/* ---------- Sticky preview pane (vertically centered) ---------- */
+	.wi__preview {
+		/* position: sticky;
+		top: 0; */
+		display: flex;
+		align-items: center; /* center the carousel vertically, not at the top */
+	}
+	.wi__preview-inner {
+		position: relative;
+		width: 100%;
+		min-height: 340px;
+	}
+	.wi__figure {
+		position: absolute;
+		inset: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		opacity: 0;
+		transform: translateY(14px) scale(0.985);
+		transition:
+			opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+			transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+		pointer-events: none;
+	}
+	.wi__figure[data-active="true"] {
+		opacity: 1;
+		transform: none;
+		pointer-events: auto; /* let users operate the carousel of the active project */
+	}
+
+	/* ---------- Carousel ---------- */
+	.wi__carousel {
+		position: relative;
+		width: 100%;
+		margin-top: 20px;
+	}
+	.wi__viewport {
+		width: 100%;
+		overflow: hidden;
+	}
+	.wi__track {
+		display: flex;
+		transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+		transform: translateX(0);
+	}
+	.wi__slide {
+		flex: 0 0 100%;
+		min-width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 4px;
+	}
+	/* Phone shots are tall — keep them from dominating the pane height. */
+	.wi__slide :global(.phone) {
+		max-width: 230px;
+	}
+
+	.wi__controls {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 14px;
+		margin-top: 18px;
+	}
+	.wi__arrow {
+		width: 34px;
+		height: 34px;
+		border-radius: 50%;
+		border: 1px solid var(--line);
+		background: var(--bg-elev);
+		color: var(--fg);
+		font-size: 14px;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		transition:
+			border-color 0.2s ease,
+			background 0.2s ease,
+			transform 0.2s ease;
+	}
+	.wi__arrow:hover {
+		border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+		background: color-mix(in srgb, var(--accent) 14%, transparent);
+		transform: translateY(-1px);
+	}
+	.wi__dots {
+		display: flex;
+		gap: 7px;
+		align-items: center;
+	}
+	.wi__dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		border: none;
+		padding: 0;
+		background: var(--line);
+		cursor: pointer;
+		transition:
+			background 0.2s ease,
+			transform 0.2s ease;
+	}
+	.wi__dot:hover {
+		background: var(--muted);
+	}
+	.wi__dot[data-active="true"] {
+		background: var(--accent);
+		transform: scale(1.3);
+	}
+
+	.wi__wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+	}
+
+	.wi__caption {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		gap: 10px 16px;
+		margin-top: 18px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		color: var(--muted);
+	}
+	.wi__caption-icons {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.wi__caption-icon {
+		width: 20px;
+		height: 20px;
+		display: block;
+		opacity: 0.85;
+		transition:
+			opacity 0.2s ease,
+			transform 0.2s ease;
+	}
+	.wi__caption-icon:hover {
+		opacity: 1;
+		transform: translateY(-2px);
+	}
+	.wi__caption-icon--mono {
+		/* dark-on-transparent brand marks (Apple, Express) -> near-white. */
+		filter: invert(92%);
+	}
+	.wi__wrapper-info {
+		display: flex;
+		gap: 15px;
+		margin-top: 20px;
+	}
+	.wi__wrapper-sub {
+		display: flex;
+		gap: 20px;
+		margin-top: 20px;
+	}
+	.wi__wrapper-col {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 10x;
+	}
+	.wi__lable-thin {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: #c4cae0;
+	}
+	.wi__seperator {
+		margin-top: auto;
+		margin-bottom: auto;
+		width: 1px;
+		height: 20px;
+		background: var(--line);
+	}
+
+	/* ---------- Responsive: mobile = stacked image cards ----------
+     No hover on touch, so the desktop preview pane is dropped and each row
+     becomes a vertical card: a large framed hero shot on top, then the
+     number, title, impact, platform badges and year below. */
+	@media (max-width: 900px) {
+		.wi {
+			grid-template-columns: 1fr;
+			gap: 0;
+		}
+		.wi__preview {
+			display: none;
+		}
+
+		.wi__list {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+			gap: 18px;
+		}
+		.wi__row,
+		.wi__row:last-child {
+			border: none;
+		}
+		/* No dimming behavior on touch. */
+		.wi__list:hover .wi__link,
+		.wi__link {
+			opacity: 1;
+		}
+
+		.wi__link {
+			display: grid;
+			grid-template-columns: auto 1fr auto;
+			grid-template-areas:
+				"thumb thumb thumb"
+				"num   main  meta";
+			column-gap: 14px;
+			row-gap: 16px;
+			align-items: start;
+			padding: 14px;
+			border: 1px solid var(--line-soft);
+			border-radius: 16px;
+			background: linear-gradient(
+				180deg,
+				var(--bg-card),
+				color-mix(in srgb, var(--bg-card) 65%, var(--bg))
+			);
+			transition:
+				border-color 0.3s ease,
+				transform 0.3s ease;
+		}
+		.wi__link:active {
+			transform: scale(0.99);
+			border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+		}
+		/* Cancel desktop hover-shift. */
+		.wi__link:hover {
+			padding-left: 14px;
+		}
+
+		/* Hero image: full-width framed shot. */
+		.wi__thumb {
+			grid-area: thumb;
+			display: block;
+			width: 100%;
+			aspect-ratio: 16 / 10;
+			border-radius: 10px;
+			overflow: hidden;
+			border: 1px solid var(--line-soft);
+			background: var(--bg);
+		}
+		.wi__thumb img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			object-position: top center;
+		}
+
+		.wi__num {
+			grid-area: num;
+			padding-top: 2px;
+		}
+		.wi__main {
+			grid-area: main;
+		}
+		.wi__title {
+			font-size: 19px;
+		}
+		.wi__row--featured .wi__title {
+			font-size: 21px;
+		}
+
+		/* Bring the meta column back (it was hidden on the desktop list). */
+		.wi__meta {
+			grid-area: meta;
+			display: flex;
+		}
+	}
+
+	/* Single column on the narrowest screens. */
+	@media (max-width: 560px) {
+		.wi__list {
+			grid-template-columns: 1fr;
+		}
+		.wi__thumb {
+			aspect-ratio: 16 / 9;
+		}
+	}
+</style>
+
+<script>
+	const AUTOPLAY_MS = 3200;
+	const reduceMotion = window.matchMedia(
+		"(prefers-reduced-motion: reduce)",
+	).matches;
+
+	type Carousel = { reset: () => void; play: () => void; stop: () => void };
+
+	// --- Carousel: prev/next/dots + autoplay per project, wraps around ---
+	function setupCarousel(root: HTMLElement): Carousel | undefined {
+		const track = root.querySelector<HTMLElement>(".wi__track");
+		const slides = root.querySelectorAll<HTMLElement>(".wi__slide");
+		const dots = root.querySelectorAll<HTMLElement>(".wi__dot");
+		const total = slides.length;
+		if (!track || total === 0) return;
+
+		let timer: ReturnType<typeof setInterval> | null = null;
+		let wantPlay = false; // this carousel's figure is the active one
+		let hovering = false;
+
+		const go = (next: number) => {
+			const i = ((next % total) + total) % total; // wrap
+			root.dataset.index = String(i);
+			track.style.transform = `translateX(-${i * 100}%)`;
+			dots.forEach((d, di) =>
+				d.setAttribute("data-active", di === i ? "true" : "false"),
+			);
+		};
+
+		const clear = () => {
+			if (timer) {
+				clearInterval(timer);
+				timer = null;
+			}
+		};
+		// Autoplay only when active, not hovered, motion allowed, and >1 slide.
+		const refresh = () => {
+			clear();
+			if (wantPlay && !hovering && !reduceMotion && total > 1) {
+				timer = setInterval(
+					() => go(Number(root.dataset.index ?? 0) + 1),
+					AUTOPLAY_MS,
+				);
+			}
+		};
+
+		// Manual interaction moves the slide and restarts the autoplay clock.
+		const manual = (n: number) => {
+			go(n);
+			refresh();
+		};
+		root.querySelector("[data-prev]")?.addEventListener("click", () =>
+			manual(Number(root.dataset.index ?? 0) - 1),
+		);
+		root.querySelector("[data-next]")?.addEventListener("click", () =>
+			manual(Number(root.dataset.index ?? 0) + 1),
+		);
+		dots.forEach((dot, di) =>
+			dot.addEventListener("click", () => manual(di)),
+		);
+
+		// Pause on hover so users can study a screenshot.
+		root.addEventListener("pointerenter", () => {
+			hovering = true;
+			refresh();
+		});
+		root.addEventListener("pointerleave", () => {
+			hovering = false;
+			refresh();
+		});
+
+		return {
+			reset: () => go(0),
+			play: () => {
+				wantPlay = true;
+				refresh();
+			},
+			stop: () => {
+				wantPlay = false;
+				clear();
+			},
+		};
+	}
+
+	const carousels = new Map<HTMLElement, Carousel | undefined>();
+	document.querySelectorAll<HTMLElement>("[data-carousel]").forEach((c) => {
+		carousels.set(c, setupCarousel(c));
+	});
+
+	// Start autoplay on whichever figure is active at load (the first project).
+	function playActive() {
+		document
+			.querySelectorAll<HTMLElement>(
+				'.wi__figure[data-active="true"] [data-carousel]',
+			)
+			.forEach((c) => carousels.get(c)?.play());
+	}
+	playActive();
+
+	// Hover/focus a row -> activate the matching preview figure. Pointer-fine only
+	// (touch keeps the inline thumbs and the default active figure).
+	const fine = window.matchMedia(
+		"(hover: hover) and (pointer: fine)",
+	).matches;
+	if (fine) {
+		const rows = document.querySelectorAll<HTMLElement>(".wi__link");
+		const figures = document.querySelectorAll<HTMLElement>(".wi__figure");
+
+		function activate(slug: string) {
+			rows.forEach((r) =>
+				r.setAttribute(
+					"data-active",
+					r.dataset.slug === slug ? "true" : "false",
+				),
+			);
+			figures.forEach((f) => {
+				const isActive = f.dataset.preview === slug;
+				f.setAttribute("data-active", isActive ? "true" : "false");
+				const c = f.querySelector<HTMLElement>("[data-carousel]");
+				const car = c ? carousels.get(c) : undefined;
+				if (!car) return;
+				if (isActive) {
+					// Reset to first image, then (re)start autoplay for this project.
+					car.reset();
+					car.play();
+				} else {
+					car.stop();
+				}
+			});
+		}
+
+		rows.forEach((row) => {
+			const slug = row.dataset.slug;
+			if (!slug) return;
+			row.addEventListener("pointerenter", () => activate(slug));
+			row.addEventListener("focus", () => activate(slug));
+		});
+	}
+</script>

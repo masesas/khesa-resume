@@ -1,0 +1,82 @@
+---
+// Signature Lucien-style preloader: full-screen navy overlay with the name at
+// bottom-left, a center status word, and a counter climbing to 100% at
+// bottom-right, over a horizontal rule that wipes from left to right.
+// Animation logic lives in src/scripts/preloader.ts.
+---
+
+<div class="preloader" id="preloader" aria-hidden="true">
+  <div class="preloader__inner container">
+    <span class="preloader__name">KHESA</span>
+    <span class="preloader__status" id="preloader-status">Loading</span>
+    <span class="preloader__count"><span id="preloader-count">0</span>%</span>
+  </div>
+  <div class="preloader__bar">
+    <span class="preloader__bar-fill" id="preloader-bar"></span>
+  </div>
+</div>
+
+<style>
+  .preloader {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding-bottom: 48px;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+  .preloader.is-done {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .preloader__inner {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    width: 100%;
+    gap: 16px;
+  }
+  .preloader__name {
+    font-family: var(--font-mono);
+    font-size: clamp(15px, 2.4vw, 22px);
+    letter-spacing: 0.18em;
+    font-weight: 500;
+  }
+  .preloader__status {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .preloader__count {
+    font-family: var(--font-mono);
+    font-size: clamp(15px, 2.4vw, 22px);
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+  .preloader__bar {
+    margin-top: 22px;
+    height: 1px;
+    width: 100%;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .preloader__bar-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  @media (max-width: 560px) {
+    .preloader__status {
+      display: none;
+    }
+  }
+</style>

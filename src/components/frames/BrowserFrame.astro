@@ -1,0 +1,95 @@
+---
+// BrowserFrame: wraps a web/desktop screenshot in a flat, straight-on browser window.
+// Pure component — props in, markup out. Screenshot is passed via the default slot.
+interface Props {
+  url?: string;
+  theme?: 'light' | 'dark';
+}
+const { url = 'localhost', theme = 'dark' } = Astro.props;
+---
+
+<div class={`browser browser--${theme}`}>
+  <div class="browser__bar">
+    <span class="browser__dots" aria-hidden="true">
+      <i class="dot dot--red"></i>
+      <i class="dot dot--amber"></i>
+      <i class="dot dot--green"></i>
+    </span>
+  </div>
+  <div class="browser__screen">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .browser {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  .browser--dark {
+    background: #0a1130;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .browser__bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 38px;
+    padding: 0 14px;
+    background: #e9e9eb;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .browser--dark .browser__bar {
+    background: #131c44;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .browser__dots {
+    display: inline-flex;
+    gap: 7px;
+    flex-shrink: 0;
+  }
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .dot--red { background: #ff5f57; }
+  .dot--amber { background: #febc2e; }
+  .dot--green { background: #28c840; }
+
+  .browser__url {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    color: #6b6b70;
+    background: #fff;
+    border-radius: 6px;
+    padding: 4px 12px;
+    max-width: 60%;
+    margin: 0 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .browser--dark .browser__url {
+    background: rgba(255, 255, 255, 0.08);
+    color: #8a93b8;
+  }
+
+  .browser__screen {
+    display: block;
+    line-height: 0;
+  }
+  .browser__screen :global(img) {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+</style>
